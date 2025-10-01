@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       breakdown: JSON.parse(row.breakdown)
     }));
 
-    sendJson(res, 200, sentences);
+    sendJson(res, 200, { sentences });
   } catch (error) {
     console.error('기록 조회 오류:', error);
     sendJson(res, 500, { error: '기록을 불러오는 중 오류가 발생했습니다.' });

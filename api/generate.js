@@ -12,36 +12,60 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { keyword, level = '3' } = req.body;
+    console.log(`[Generate] 요청 수신 - Method: ${req.method}, Body:`, req.body);
+
+    const { keyword } = req.body;
 
     if (!keyword || keyword.trim() === '') {
+      console.log('[Generate] 키워드 누락');
       return sendJson(res, 400, { error: '키워드를 입력해주세요.' });
     }
 
     const cleanKeyword = keyword.trim();
-    let sentenceData;
+    console.log(`[Generate] 키워드: ${cleanKeyword}, Provider: ${LLM_PROVIDER}`);
 
-    // Generate sentence based on provider
-    if (LLM_PROVIDER === 'openai' && OPENAI_API_KEY) {
-      sentenceData = await generateSentenceWithOpenAI(cleanKeyword, level);
-    } else {
-      sentenceData = getFallbackData(cleanKeyword, level);
+    const sentences = [];
+
+    // Generate sentences for all 3 levels
+    const levels = ['초급', '중급', '고급'];
+
+    for (const level of levels) {
+      console.log(`[Generate] ${level} 문장 생성 시작`);
+      let sentenceData;
+
+      // Generate sentence based on provider
+      if (LLM_PROVIDER === 'openai' && OPENAI_API_KEY) {
+        console.log(`[Generate] OpenAI API 사용 - ${level}`);
+        sentenceData = await generateSentenceWithOpenAI(cleanKeyword, level);
+      } else {
+        console.log(`[Generate] Fallback 데이터 사용 - ${level}`);
+        sentenceData = getFallbackData(cleanKeyword, level);
+      }
+
+      console.log(`[Generate] ${level} 문장 생성 완료:`, sentenceData.japanese);
+
+      // Save to database
+      const insertStmt = db.prepare(`
+        INSERT INTO sentences (keyword, level, japanese, pronunciation, translation, breakdown)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+
+      const result = insertStmt.run(
+        cleanKeyword,
+        level,
+        sentenceData.japanese,
+        sentenceData.pronunciation,
+        sentenceData.translation,
+        JSON.stringify(sentenceData.breakdown)
+      );
+
+      // Add sentence with ID to response
+      sentences.push({
+        id: result.lastInsertRowid,
+        level,
+        ...sentenceData
+      });
     }
-
-    // Save to database
-    const insertStmt = db.prepare(`
-      INSERT INTO sentences (keyword, level, japanese, pronunciation, translation, breakdown)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = insertStmt.run(
-      cleanKeyword,
-      level,
-      sentenceData.japanese,
-      sentenceData.pronunciation,
-      sentenceData.translation,
-      JSON.stringify(sentenceData.breakdown)
-    );
 
     // Update user progress
     const progressStmt = db.prepare(`
@@ -50,17 +74,11 @@ export default async function handler(req, res) {
     `);
     progressStmt.run(cleanKeyword, cleanKeyword);
 
-    // Return response
-    const response = {
-      id: result.lastInsertRowid,
-      keyword: cleanKeyword,
-      level,
-      ...sentenceData
-    };
-
-    sendJson(res, 200, response);
+    console.log(`[Generate] 응답 전송 - ${sentences.length}개 문장`);
+    // Return response in the same format as server.js
+    sendJson(res, 200, { sentences });
   } catch (error) {
-    console.error('문장 생성 오류:', error);
+    console.error('[Generate] 오류:', error);
     sendJson(res, 500, { error: '문장을 생성하는 동안 문제가 발생했습니다. 다시 시도해 주세요.' });
   }
 }
