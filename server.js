@@ -31,8 +31,8 @@ const LLM_PROVIDER = (() => {
 
 const publicDir = path.join(__dirname, 'public');
 
-// Initialize database
-const db = new Database(path.join(__dirname, 'numori.sqlite'));
+// Initialize database (in-memory for Vercel compatibility)
+const db = new Database(':memory:');
 
 // Create tables if they don't exist
 db.exec(`
@@ -107,16 +107,62 @@ const server = http.createServer(async (req, res) => {
   return serveStatic(url, res);
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`NuMori 서버가 http://${HOST}:${PORT} 에서 대기 중입니다.`);
-  console.log(`LLM 공급자: ${LLM_PROVIDER}`);
-  if (LLM_PROVIDER === 'openai' && !OPENAI_API_KEY) {
-    console.log('경고: OPENAI_API_KEY가 감지되지 않았습니다. 샘플 데이터로 전환합니다.');
-  }
-  if (LLM_PROVIDER === 'ollama') {
-    console.log(`"${OLLAMA_MODEL}" Ollama 모델을 ${OLLAMA_HOST}에서 사용할 예정입니다.`);
-  }
-});
+// For Vercel deployment
+if (process.env.VERCEL) {
+  module.exports = async (req, res) => {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
+    // API routes
+    if (req.method === 'POST' && url.pathname === '/api/generate') {
+      return handleGenerate(req, res);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/history') {
+      return handleGetHistory(req, res);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/bookmark') {
+      return handleBookmark(req, res);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/bookmarks') {
+      return handleGetBookmarks(req, res);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/progress') {
+      return handleGetProgress(req, res);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/quiz') {
+      return handleQuiz(req, res);
+    }
+
+    // Serve static files
+    return serveStatic(url, res);
+  };
+} else {
+  // Local development
+  server.listen(PORT, HOST, () => {
+    console.log(`NuMori 서버가 http://${HOST}:${PORT} 에서 대기 중입니다.`);
+    console.log(`LLM 공급자: ${LLM_PROVIDER}`);
+    if (LLM_PROVIDER === 'openai' && !OPENAI_API_KEY) {
+      console.log('경고: OPENAI_API_KEY가 감지되지 않았습니다. 샘플 데이터로 전환합니다.');
+    }
+    if (LLM_PROVIDER === 'ollama') {
+      console.log(`"${OLLAMA_MODEL}" Ollama 모델을 ${OLLAMA_HOST}에서 사용할 예정입니다.`);
+    }
+  });
+}
 
 async function handleGenerate(req, res) {
   try {
