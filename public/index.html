@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NuMori: 일본어 문장 빌더</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-tab="generate">문장 생성</button>
+    <button class="nav-tab" data-tab="history">학습 기록</button>
+    <button class="nav-tab" data-tab="bookmarks">즐겨찾기</button>
+    <button class="nav-tab" data-tab="quiz">퀴즈</button>
+    <button class="nav-tab" data-tab="progress">진도 현황</button>
+  </nav>
+
+  <main class="app">
+    <section class="intro">
+      <h1>NuMori</h1>
+      <p class="tagline">층층이 풀어보는 일본어 문장으로 문법 감각을 길러보세요.</p>
+    </section>
+
+    <div class="tab-content">
+      <!-- Generate Tab -->
+      <div id="generateTab" class="tab-panel active">
+        <form id="keywordForm" class="neumorphic-card search-card" autocomplete="off">
+          <label class="label" for="keyword">오늘 어떤 주제를 탐색하고 싶으신가요?</label>
+          <div class="input-row">
+            <input id="keyword" name="keyword" type="text" placeholder="예: 여행, 감사, 스시" required />
+            <button id="generateBtn" type="submit">문장 생성</button>
+          </div>
+          <p class="helper-text">입력한 키워드를 바탕으로 초급·중급·고급 문장을 만들어 드립니다.</p>
+        </form>
+
+        <section id="status" class="status"></section>
+        <section id="results" class="results"></section>
+      </div>
+
+      <!-- History Tab -->
+      <div id="historyTab" class="tab-panel">
+        <div class="neumorphic-card">
+          <h2>학습 기록</h2>
+          <div id="historyList" class="history-list"></div>
+        </div>
+      </div>
+
+      <!-- Bookmarks Tab -->
+      <div id="bookmarksTab" class="tab-panel">
+        <div class="neumorphic-card">
+          <h2>즐겨찾기</h2>
+          <div id="bookmarksList" class="bookmarks-list"></div>
+        </div>
+      </div>
+
+      <!-- Quiz Tab -->
+      <div id="quizTab" class="tab-panel">
+        <div class="neumorphic-card quiz-container">
+          <h2>간격 반복 퀴즈</h2>
+          <div id="quizContent" class="quiz-content">
+            <p>즐겨찾기에 추가한 문장으로 퀴즈를 시작하세요!</p>
+            <button id="startQuizBtn" class="start-quiz-btn">퀴즈 시작</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Tab -->
+      <div id="progressTab" class="tab-panel">
+        <div class="neumorphic-card">
+          <h2>학습 진도</h2>
+          <div id="progressStats" class="progress-stats"></div>
+          <div id="progressDetails" class="progress-details"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside id="detailPanel" class="neumorphic-card detail-panel hidden">
+      <header>
+        <h2 id="detailHeading">구절을 눌러 형태를 살펴보세요</h2>
+      </header>
+      <div id="detailContent" class="detail-content"></div>
+    </aside>
+  </main>
+
+  <template id="sentenceTemplate">
+    <article class="neumorphic-card sentence-card">
+      <header>
+        <span class="level"></span>
+        <div class="sentence-actions">
+          <button class="bookmark-btn" title="즐겨찾기">☆</button>
+          <button class="audio-btn" title="발음 듣기">🔊</button>
+        </div>
+        <div class="sentence-text"></div>
+        <div class="pronunciation"></div>
+      </header>
+      <p class="translation"></p>
+      <div class="breakdown"></div>
+    </article>
+  </template>
+
+  <template id="quizQuestionTemplate">
+    <div class="quiz-question">
+      <div class="question-text"></div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-type="show-translation">번역 보기</button>
+        <button class="quiz-option" data-type="show-breakdown">문법 분석 보기</button>
+        <button class="quiz-option" data-type="play-audio">발음 듣기</button>
+      </div>
+      <div class="quiz-answer hidden">
+        <div class="answer-content"></div>
+        <div class="quiz-feedback">
+          <button class="feedback-btn correct">맞음</button>
+          <button class="feedback-btn incorrect">틀림</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="./script.js" type="module"></script>
+</body>
+</html>

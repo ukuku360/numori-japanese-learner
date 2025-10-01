@@ -1,0 +1,45 @@
+{
+  "name": "numori",
+  "version": "2.0.0",
+  "description": "AI-powered Japanese learning app with neumorphic design",
+  "main": "server.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint . --ext .js,.json",
+    "lint:fix": "eslint . --ext .js,.json --fix",
+    "format": "prettier --write .",
+    "prepare": "husky install"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "better-sqlite3": "^11.3.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10"
+  },
+  "lint-staged": {
+    "*.{js,json}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "keywords": [
+    "japanese",
+    "learning",
+    "ai",
+    "education",
+    "neumorphism",
+    "language"
+  ]
+}
