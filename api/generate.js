@@ -1,6 +1,15 @@
-const { db, setCORS, sendJson, generateSentenceWithOpenAI, getFallbackData, LLM_PROVIDER, OPENAI_API_KEY } = require('./_shared');
+const {
+  db,
+  setCORS,
+  sendJson,
+  parseJsonBody,
+  generateSentenceWithOpenAI,
+  getFallbackData,
+  LLM_PROVIDER,
+  OPENAI_API_KEY
+} = require('./_shared');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   setCORS(res);
 
   if (req.method === 'OPTIONS') {
@@ -12,9 +21,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log(`[Generate] 요청 수신 - Method: ${req.method}, Body:`, req.body);
+    const body = await parseJsonBody(req);
+    console.log(`[Generate] 요청 수신 - Method: ${req.method}, Body:`, body);
 
-    const { keyword } = req.body;
+    const { keyword } = body;
 
     if (!keyword || keyword.trim() === '') {
       console.log('[Generate] 키워드 누락');
@@ -78,6 +88,11 @@ export default async function handler(req, res) {
     // Return response in the same format as server.js
     sendJson(res, 200, { sentences });
   } catch (error) {
+    if (error?.statusCode === 400) {
+      console.error('[Generate] 본문 파싱 오류:', error.message);
+      return sendJson(res, 400, { error: error.message });
+    }
+
     console.error('[Generate] 오류:', error);
     sendJson(res, 500, { error: '문장을 생성하는 동안 문제가 발생했습니다. 다시 시도해 주세요.' });
   }

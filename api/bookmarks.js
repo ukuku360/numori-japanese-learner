@@ -1,6 +1,6 @@
 const { db, setCORS, sendJson } = require('./_shared');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   setCORS(res);
 
   if (req.method === 'OPTIONS') {
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       breakdown: JSON.parse(row.breakdown)
     }));
 
-    sendJson(res, 200, bookmarks);
+    sendJson(res, 200, { bookmarks });
   } catch (error) {
     console.error('북마크 조회 오류:', error);
     sendJson(res, 500, { error: '북마크를 불러오는 중 오류가 발생했습니다.' });

@@ -106,9 +106,13 @@ async function toggleBookmark(sentenceId, isBookmarked) {
 
     if (response.ok) {
       return !isBookmarked;
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || '북마크 저장에 실패했습니다.');
     }
   } catch (error) {
     console.error('북마크 저장 오류:', error);
+    setStatus(error.message || '북마크 저장 중 오류가 발생했습니다.');
   }
   return isBookmarked;
 }
@@ -322,6 +326,11 @@ function resetDetailPanel() {
 async function loadHistory() {
   try {
     const response = await fetch('/api/history?limit=20');
+
+    if (!response.ok) {
+      throw new Error('기록을 불러오는 중 오류가 발생했습니다.');
+    }
+
     const data = await response.json();
 
     if (data.sentences) {
@@ -329,6 +338,7 @@ async function loadHistory() {
     }
   } catch (error) {
     console.error('기록 로딩 오류:', error);
+    historyList.innerHTML = `<p class="error-message">${error.message || '기록을 불러올 수 없습니다.'}</p>`;
   }
 }
 
@@ -359,6 +369,11 @@ function renderHistoryList(sentences) {
 async function loadBookmarks() {
   try {
     const response = await fetch('/api/bookmarks');
+
+    if (!response.ok) {
+      throw new Error('북마크를 불러오는 중 오류가 발생했습니다.');
+    }
+
     const data = await response.json();
 
     if (data.bookmarks) {
@@ -366,6 +381,7 @@ async function loadBookmarks() {
     }
   } catch (error) {
     console.error('북마크 로딩 오류:', error);
+    bookmarksList.innerHTML = `<p class="error-message">${error.message || '북마크를 불러올 수 없습니다.'}</p>`;
   }
 }
 
@@ -397,6 +413,11 @@ function renderBookmarksList(bookmarks) {
 async function loadProgress() {
   try {
     const response = await fetch('/api/progress');
+
+    if (!response.ok) {
+      throw new Error('진도를 불러오는 중 오류가 발생했습니다.');
+    }
+
     const data = await response.json();
 
     if (data.stats) {
@@ -407,6 +428,8 @@ async function loadProgress() {
     }
   } catch (error) {
     console.error('진도 로딩 오류:', error);
+    progressStats.innerHTML = `<p class="error-message">${error.message || '진도를 불러올 수 없습니다.'}</p>`;
+    progressDetails.innerHTML = '';
   }
 }
 
@@ -459,11 +482,7 @@ function initializeQuiz() {
 async function startQuiz() {
   try {
     const response = await fetch('/api/quiz', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ sentenceId: 1, correct: true }) // Dummy to get first question
+      method: 'GET'
     });
 
     const data = await response.json();
@@ -472,10 +491,11 @@ async function startQuiz() {
       currentQuizQuestion = data.nextQuestion;
       renderQuizQuestion(data.nextQuestion);
     } else {
-      quizContent.innerHTML = '<p>퀴즈할 문장이 없습니다. 먼저 문장을 즐겨찾기에 추가해주세요!</p>';
+      quizContent.innerHTML = `<p>${data.message || '퀴즈할 문장이 없습니다. 먼저 문장을 즐겨찾기에 추가해주세요!'}</p>`;
     }
   } catch (error) {
     console.error('퀴즈 시작 오류:', error);
+    quizContent.innerHTML = '<p>퀴즈를 시작하는 중 오류가 발생했습니다. 다시 시도해주세요.</p>';
   }
 }
 
@@ -538,6 +558,11 @@ async function submitQuizAnswer(questionId, correct) {
       })
     });
 
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || '퀴즈 답변 제출에 실패했습니다.');
+    }
+
     const data = await response.json();
 
     if (data.nextQuestion) {
@@ -554,6 +579,7 @@ async function submitQuizAnswer(questionId, correct) {
     }
   } catch (error) {
     console.error('퀴즈 답변 제출 오류:', error);
+    quizContent.innerHTML = `<p class="error-message">${error.message || '퀴즈 답변 제출 중 오류가 발생했습니다.'}</p>`;
   }
 }
 

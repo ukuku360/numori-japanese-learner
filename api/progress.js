@@ -1,6 +1,6 @@
 const { db, setCORS, sendJson } = require('./_shared');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   setCORS(res);
 
   if (req.method === 'OPTIONS') {

@@ -58,8 +58,65 @@ function setCORS(res) {
 
 // JSON response helper
 function sendJson(res, statusCode, body) {
-  setCORS(res);
   res.status(statusCode).json(body);
+}
+
+// Body parser for JSON POST requests (Vercel's Node runtime doesn't parse automatically)
+async function parseJsonBody(req) {
+  if (req.body && Buffer.isBuffer(req.body)) {
+    try {
+      const parsed = JSON.parse(req.body.toString('utf8'));
+      req.body = parsed;
+      return parsed;
+    } catch (error) {
+      const parseError = new Error('요청 본문을 JSON으로 파싱할 수 없습니다.');
+      parseError.statusCode = 400;
+      throw parseError;
+    }
+  }
+
+  if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
+    return req.body;
+  }
+
+  if (req.body && typeof req.body === 'string') {
+    try {
+      req.body = JSON.parse(req.body);
+      return req.body;
+    } catch (error) {
+      const parseError = new Error('요청 본문을 JSON으로 파싱할 수 없습니다.');
+      parseError.statusCode = 400;
+      throw parseError;
+    }
+  }
+
+  const rawBody = await new Promise((resolve, reject) => {
+    let data = '';
+
+    req.on('data', (chunk) => {
+      data += chunk;
+      if (data.length > 1e6) {
+        req.destroy(new Error('요청 본문이 너무 큽니다.'));
+      }
+    });
+
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
+  });
+
+  if (!rawBody) {
+    req.body = {};
+    return req.body;
+  }
+
+  try {
+    req.body = JSON.parse(rawBody);
+    return req.body;
+  } catch (error) {
+    const parseError = new Error('요청 본문을 JSON으로 파싱할 수 없습니다.');
+    parseError.statusCode = 400;
+    throw parseError;
+  }
 }
 
 // Generate sentence using OpenAI
@@ -303,6 +360,7 @@ module.exports = {
   db,
   setCORS,
   sendJson,
+  parseJsonBody,
   generateSentenceWithOpenAI,
   getFallbackData,
   LLM_PROVIDER,
